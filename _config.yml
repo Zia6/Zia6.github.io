@@ -7,13 +7,13 @@ title: Zhaixx's Blog
 subtitle: ''
 description: ''
 keywords:
-author: John Doe
+author: Zhaixx
 language: zh-CN
 timezone: ''
 
 # URL
 ## Set your site url here. For example, if you use GitHub Page, set url as 'https://username.github.io/project'
-url: http://example.com
+url: https://zia6.github.io/
 permalink: :year/:month/:day/:title/
 permalink_defaults:
 pretty_urls:
