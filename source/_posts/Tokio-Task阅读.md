@@ -3,9 +3,13 @@ title: Tokio-Task阅读
 date: 2024-12-10 11:19:09
 tags:
 ---
+
 ## 任务模块概述
+
 任务模块负责管理运行时生成的任务，并为其他模块提供安全的 API 接口。每个任务通常存储在 `OwnedTasks` 或 `LocalOwnedTasks` 中，并通过引用计数（ref-count）来跟踪任务的活动引用。
+
 ### 任务引用类型
+
 在运行时，任务可以通过不同的引用类型进行管理，主要有以下几种：
 
 - **`OwnedTask`**：任务存储在 `OwnedTasks` 或 `LocalOwnedTasks` 中。
@@ -14,7 +18,7 @@ tags:
 - **`Notified`**：用于追踪任务是否被通知。
 - **`Unowned`**：用于任务不在运行时管理下的引用，通常用于阻塞任务或测试。
 
-`Unowned` 类型会占用两个引用计数，而其他引用类型只占用一个，Unowned通过`std::mem::forget`函数保证了两个引用计数
+`Unowned` 类型会占用两个引用计数，而其他引用类型只占用一个，Unowned 通过`std::mem::forget`函数保证了两个引用计数
 
 ### 任务状态
 
@@ -38,13 +42,16 @@ tags:
 - **`waker` 字段**：多个线程可以并发访问，但需要通过 `JOIN_WAKER` 位来控制访问权限，确保线程安全。
 
 ### 任务生命周期和访问控制
+
 任务的生命周期由以下规则管理：
+
 1. **`JOIN_WAKER`** 位控制对 `JoinHandle` 和运行时对 `waker` 字段的访问。
 2. 任务完成后，`JoinHandle` 可以触发 waker，唤醒等待的线程。
 3. 任务状态只能由当前线程设置和修改，以保证多线程访问时的一致性。
 
 ### 关于任务的所有权
-``` rust
+
+```rust
 pub(crate) struct Task<S: 'static> {
     raw: RawTask,
     _p: PhantomData<S>,
@@ -58,10 +65,13 @@ pub(crate) struct RawTask {
     ptr: NonNull<Header>,
 }
 ```
-因为Task持有的RawTask是一个NonNull类型的指针，也就是说它并没有实际上Header的所有权，因此我们要保证UnownedTask还在的时候，rawTask不能被释放，因此我们要避免因为作用域的原因自动调用与UnownedTask绑定的Task或者Notified的drop函数发生内存释放，因此我们采用`std::mem::forget()`函数使得rust不再管Task和Notified的drop，让UnownedTask接管内存的释放。
 
-### 任务数据结构Cell<T, S>的构成
+因为 Task 持有的 RawTask 是一个 NonNull 类型的指针，也就是说它并没有实际上 Header 的所有权，因此我们要保证 UnownedTask 还在的时候，rawTask 不能被释放，因此我们要避免因为作用域的原因自动调用与 UnownedTask 绑定的 Task 或者 Notified 的 drop 函数发生内存释放，因此我们采用`std::mem::forget()`函数使得 rust 不再管 Task 和 Notified 的 drop，让 UnownedTask 接管内存的释放。
+
+### 任务数据结构 Cell<T, S>的构成
+
 #### Header
+
 - **state**: AtomicUsize，任务的状态和引用计数
 - **queue_next**: 指向下一个 Header（任务头部）
 - **vtable**:
@@ -78,21 +88,25 @@ pub(crate) struct RawTask {
 - **owned_id**: `Option<NonZeroU64>`
 
 #### Core<T, S>
+
 - **scheduler**: 类型为 `S` 的调度器
 - **task_id**: 任务 ID
 - **stage**: `CoreStage<T>`，表示 Future 或者 Output
   - **Running(T)**: 运行中
   - **Finished(Result<T::Output>)**: 已完成
   - **Consumed**: 已消费
+
 #### Trailer
+
 - **owned**: `linked_list::Pointers<Header>`
 - **waker**: `Option<Waker>`，唤醒器
 - **hooks**: `TaskHarnessScheduleHooks`，调度时的回调函数
 
-
 ### 任务的新建
-首先调用Task的new()函数，进而在Task的new()中调用了rawTask的new()函数，这个函数通过Box::into_raw()分配一段空间并返回&mut类型指针，然后通过cast修改指针类型，进而使得rawTask是NonNull\<header\>的类型
-``` rust
+
+首先调用 Task 的 new()函数，进而在 Task 的 new()中调用了 rawTask 的 new()函数，这个函数通过 Box::into_raw()分配一段空间并返回&mut 类型指针，然后通过 cast 修改指针类型，进而使得 rawTask 是 NonNull\<header\>的类型
+
+```rust
 fn new_task<T, S>(
         task: T,
         scheduler: S,
