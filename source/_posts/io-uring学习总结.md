@@ -110,7 +110,7 @@ io-uring主要是使用了共享内存来避免系统调用发生的上下文切
 - 用户查看CQ，发现已经完成，移除CQ中已经完成的事件，移动CQ的head指针
 {% note info %}
 ## 参考资料
-- [Linux I/O 模型](https://man7.org/linux/man-pages/man7/io.7.html)
-- [io_uring 官方文档](https://kernel.dk/io_uring.pdf)
-- [io_uring 教程](https://unixism.net/loti/)
+- [图解原理｜Linux I/O 神器之 io_uring](https://cloud.tencent.com/developer/article/2187655)
+- [带你彻底理解Linux五种I/O模型](https://wiyi.org/linux-io-model.html)
+- [知乎大佬图文并茂的epoll讲解，看不懂的去砍他](https://blog.csdn.net/s2603898260/article/details/106799129)
 {% endnote %}
