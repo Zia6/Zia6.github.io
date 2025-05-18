@@ -1,0 +1,179 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Zhaixx's Blog</title><meta name="author" content="Zhaixx"><meta name="copyright" content="Zhaixx"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="website">
+<meta property="og:title" content="Zhaixx&#39;s Blog">
+<meta property="og:url" content="https://zia6.github.io/index.html">
+<meta property="og:site_name" content="Zhaixx&#39;s Blog">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://avatars.githubusercontent.com/u/134052685?s=400&u=6df3485aa0fbf1016b0d5e00de4cfd71630a5f57&v=4">
+<meta property="article:author" content="Zhaixx">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://avatars.githubusercontent.com/u/134052685?s=400&u=6df3485aa0fbf1016b0d5e00de4cfd71630a5f57&v=4"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://zia6.github.io/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Zhaixx\'s Blog',
+  isPost: false,
+  isHome: true,
+  isHighlightShrink: false,
+  isToc: false,
+  isShuoshuo: false
+}</script><meta name="generator" content="Hexo 7.3.0"></head><body><div class="page" id="body-wrap"><header class="full_page" id="page-header" style="background-image: url(https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Zhaixx's Blog</span></a></span><div id="menus"></div></nav><div id="site-info"><h1 id="site-title">Zhaixx's Blog</h1><div id="site_social_icons"><a class="social-icon" href="https://github.com/Zia6" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:z20230404@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div id="scroll-down"><i class="fas fa-angle-down scroll-down-effects"></i></div></header><main class="layout" id="content-inner"><div class="recent-posts nc" id="recent-posts"><div class="recent-post-items"><div class="recent-post-item"><div class="recent-post-info no-cover"><a class="article-title" href="/2025/05/18/hello-world/" title="Hello World">Hello World</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2025-05-18T06:00:17.350Z" title="发表于 2025-05-18 14:00:17">2025-05-18</time></span></div><div class="content">Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub. Quick StartCreate a new post1$ hexo new &quot;My New Post&quot;  More info: Writing Run server1$ hexo server  More info: Server Generate static files1$ hexo generate  More info: Generating Deploy to remote sites1$ hexo deploy  More info: Deployment </div></div></div><div class="recent-post-item"><div class="recent-post-info no-cover"><a class="article-title" href="/2025/02/20/SQL%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90/" title="SQL性能分析">SQL性能分析</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2025-02-20T13:12:18.000Z" title="发表于 2025-02-20 21:12:18">2025-02-20</time></span></div><div class="content">SQL性能分析(MySQL)SQL执行频次查询MySQL客户端连接成功后，通过show[session | global] status命令可以提供服务器状态信息。通过如下指令，可以查看当前数据库的INSERT、UPDATE、DELETE、SELECT的访问频次: 1SHOW GLOBAL STATUS LIKE...</div></div></div><div class="recent-post-item"><div class="recent-post-info no-cover"><a class="article-title" href="/2025/02/20/%E4%B8%BA%E4%BB%80%E4%B9%88InnoDb%E9%87%87%E7%94%A8B-%E6%A0%91%E7%B4%A2%E5%BC%95%E8%80%8C%E4%B8%8D%E6%98%AFB%E6%A0%91%E6%88%96%E8%80%85Hash/" title="为什么InnoDb采用B+树索引而不是B树或者Hash">为什么InnoDb采用B+树索引而不是B树或者Hash</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2025-02-20T12:52:02.000Z" title="发表于 2025-02-20 20:52:02">2025-02-20</time></span></div><div class="content">为什么 InnoDB 选择 B+ 树索引，而不是 B 树或者 Hash？InnoDB 选择 B+ 树（B+Tree）索引 作为默认存储引擎索引结构，主要是因为它 兼顾查询效率、范围查询、磁盘存取优化，而 B 树 和 哈希索引（Hash） 各有局限性。  1. B+ 树 vs B 树   特性 B+ 树（B+Tree） B 树（B-Tree）    数据存储位置 仅叶子节点存储数据 所有节点（包括内部节点）都存储数据   范围查询（BETWEEN, &gt;, &lt;） ✅ 高效（叶子节点链表结构） ❌ 低效（必须遍历整个树）   磁盘读取效率 ✅ 更少的磁盘 I&#x2F;O，更快的查询 ❌ 节点大小不均，I&#x2F;O 开销大   索引扫描（ORDER BY） ✅ 高效支持 ❌ 不支持，查询需回溯树结构   🔹 为什么 B+ 树更适合数据库？ 范围查询更高效：    B+ 树的 叶子节点 通过 链表连接，遍历时可以 直接顺序访问，适合 BETWEEN、ORDER BY、LIKE &#39;prefix%&#39; 查询。 B...</div></div></div><div class="recent-post-item"><div class="recent-post-info no-cover"><a class="article-title" href="/2025/02/18/Mysql%E5%AD%A6%E4%B9%A0%E6%97%A5%E8%AE%B0/" title="Mysql事务和存储引擎">Mysql事务和存储引擎</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2025-02-18T05:28:19.000Z" title="发表于 2025-02-18 13:28:19">2025-02-18</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/Mysql/">Mysql</a></span></div><div class="content">事务ACID Atomicity  Consistency Isolation Durability  并发事务问题 脏读 一个事务读到另外一个事务还没有提交的数据  不可重复读 一个事务先后读取同一条记录，但两次读取的数据不同，称之为不可重复度，也就是一个事务第一次和第二次读的中间这个数据被另一个事务提交修改了，所以不一致  幻读 查询的时候没有，插入的时候出现了，跟不可重复读差不多，不过是从0到1。   MySQL 事务隔离级别   隔离级别 脏读 不可重复读 幻读 描述    读未提交 (Read Uncommitted) ✅ ✅ ✅ 允许读取未提交的数据，可能导致脏读、不可重复读和幻读。   读已提交 (Read Committed) ❌ ✅ ✅ 只能读取已提交数据，避免了脏读，但仍可能发生不可重复读和幻读。   可重复读 (Repeatable Read) ❌ ❌ ✅ 确保同一事务中多次读取数据一致，防止脏读和不可重复读，但可能出现幻读。   串行化...</div></div></div><div class="recent-post-item"><div class="recent-post-info no-cover"><a class="article-title" href="/2024/12/23/S6-081-fs%E8%A7%A3%E6%9E%90/" title="S6.081 fs解析">S6.081 fs解析</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2024-12-23T02:12:32.000Z" title="发表于 2024-12-23 10:12:32">2024-12-23</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/S6-081-lab%E8%A7%A3%E6%9E%90/">S6.081 lab解析</a></span></div><div class="content">Large files这个lab的任务是增加xv6文件的最大大小，目前一个Inode里有12个直接块号和1个间接块号，总共12 + 256 &#x3D; 268个块，我们需要修改Inode(将一个直接块变为二级索引块)使得一个文件能够变得更大,具体的步骤是先修改fs.h中NDIRECT的定义，然后再去修改bmap使得操作系统能够访问到我们增加的块 具体实现修改宏定义12345// fs.h#define NDIRECT 11uint addrs[NDIRECT+2];   // Data block addresses//file.huint addrs[NDIRECT+2];  修改bmap12345678910111213141516171819202122232425bn -= NINDIRECT;  if (bn &lt; NINDIRECT * NINDIRECT)  &#123;    if ((addr = ip-&gt;addrs[NDIRECT + 1]) == 0)    &#123;      ip-&gt;addrs[NDIRECT + 1] =...</div></div></div><div class="recent-post-item"><div class="recent-post-info no-cover"><a class="article-title" href="/2024/12/23/S6-081-Locks%E8%A7%A3%E6%9E%90/" title="S6.081 Locks解析">S6.081 Locks解析</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2024-12-23T02:12:15.000Z" title="发表于 2024-12-23 10:12:15">2024-12-23</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/S6-081-lab%E8%A7%A3%E6%9E%90/">S6.081 lab解析</a></span></div><div class="content">LocksMemory allocktor(moderate)kalloc中多个cpu进行并发时会产生锁争用，我们要对每一个cpu维护一下freelist来优化，减少锁征用具体做法是一开始将所有的可用内存分配给一个cpu，然后其他cpu在没有可用内存时可以从其他cpu那里偷一些内存，然后谁释放的内存这个内存就归谁。 修改kmem1234struct &#123;  struct spinlock lock;  struct run *freelist;&#125; kmem[NCPU]; 修改kinit,给每个cpu分配一个kmem,并初始化自旋锁1234567891011voidkinit()&#123;  char buffer[100];  for(int i = 0;i &lt; NCPU;i++)&#123;    snprintf(buffer, 100, &quot;kmem%d&quot;, i);    initlock(&amp;kmem[i].lock, buffer);;  &#125;  // initlock(&amp;kmem.lock,...</div></div></div><div class="recent-post-item"><div class="recent-post-info no-cover"><a class="article-title" href="/2024/12/22/io-uring%E5%AD%A6%E4%B9%A0%E6%80%BB%E7%BB%93/" title="io-uring学习总结">io-uring学习总结</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2024-12-22T02:04:58.000Z" title="发表于 2024-12-22 10:04:58">2024-12-22</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/Tokio/">Tokio</a></span></div><div class="content">这两天学了一些关于io-uring的内容，但是要理解io-uring的性能为什么快，我觉得应该先了解传统的IO多路复用，也就是Select、Poll以及Epoll，然后才能明白为什么Io-uring比较快。 IO的基本流程传统IO的基本流程一般都是应用程序也就是用户态下的代码发起IO请求，然后发生系统调用，系统由用户态转移到内核态，内核进行IO操作，得到结果之后把内容拷贝进用户空间，这里的开销主要在于上下文切换和IO本身的开销，因为IO相对于cpu运行的速度来说是非常慢的，而且磁盘运行速度也远低于内存，我们为了等待io就会浪费大量的cpu资源，因此出现了IO模型 IO模型的种类在Linux下一般有如下五种IO模型  blocking I&#x2F;O nonblocking I&#x2F;O I&#x2F;O multiplexing (select 、poll、 epoll) signal driven I&#x2F;O (SIGIO) asynchronous I&#x2F;O (the POSIX aio_functions)下面我们逐一介绍  blocking...</div></div></div><div class="recent-post-item"><div class="recent-post-info no-cover"><a class="article-title" href="/2024/12/13/Tokio-Schedule%E9%98%85%E8%AF%BB/" title="Tokio-Schedule阅读">Tokio-Schedule阅读</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2024-12-13T14:41:47.000Z" title="发表于 2024-12-13 22:41:47">2024-12-13</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/Tokio/">Tokio</a></span></div><div class="content">Multi-threads因为默认的配置是多线程的，所以先阅读的多线程的部分 mod.rs这里主要是关于 Schedule 的 Handle 以及调度 worker 运行时的 Context，他们都通过 enum 进行了一层抽象，就是里面都是差不多的内容，不过外面包了一层枚举类型，你可以通过这个类型来找到当前的 Runtime 是多线程还是单线程的，接下来是 Handle 和 Context 具体的内容 123456789101112131415161718192021222324252627pub(crate) struct Handle &#123;    /// Task spawner    pub(super) shared: worker::Shared,    /// Resource driver handles    pub(crate) driver: driver::Handle,    /// Blocking pool spawner    pub(crate) blocking_spawner: blocking::Spawner,    ///...</div></div></div><div class="recent-post-item"><div class="recent-post-info no-cover"><a class="article-title" href="/2024/12/12/S6.081-MultiThread%E8%A7%A3%E6%9E%90/" title="S6.081 lab解析">S6.081 lab解析</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2024-12-12T12:48:25.000Z" title="发表于 2024-12-12 20:48:25">2024-12-12</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/S6-081-lab%E8%A7%A3%E6%9E%90/">S6.081 lab解析</a></span></div><div class="content">MultithreadingUthread:switching between threads&nbsp;&nbsp;&nbsp;&nbsp;这个实验是在给定的代码基础上实现用户级的线程切换，我们只需要模仿一下 Kernel 中的 Context 即可(1)定义一下 context 12345678910111213141516struct context &#123;  uint64 ra;  uint64 sp;  uint64 s0;  uint64 s1;  uint64 s2;  uint64 s3;  uint64 s4;  uint64 s5;  uint64 s6;  uint64 s7;  uint64 s8;  uint64 s9;  uint64 s10;  uint64 s11;&#125;;  (2)修改一下 thread 结构体 12345struct thread &#123;  char       stack[STACK_SIZE]; /* the thread&#x27;s stack */  int        state; ...</div></div></div><div class="recent-post-item"><div class="recent-post-info no-cover"><a class="article-title" href="/2024/12/10/Tokio-Task%E9%98%85%E8%AF%BB/" title="Tokio-Task阅读">Tokio-Task阅读</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">发表于</span><time datetime="2024-12-10T03:19:09.000Z" title="发表于 2024-12-10 11:19:09">2024-12-10</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/Tokio/">Tokio</a></span></div><div class="content">任务模块概述任务模块负责管理运行时生成的任务，并为其他模块提供安全的 API 接口。每个任务通常存储在 OwnedTasks 或 LocalOwnedTasks 中，并通过引用计数（ref-count）来跟踪任务的活动引用。 任务引用类型在运行时，任务可以通过不同的引用类型进行管理，主要有以下几种：  **OwnedTask**：任务存储在 OwnedTasks 或 LocalOwnedTasks 中。 **JoinHandle**：任务的句柄，允许访问任务的输出。 **Waker**：每个任务可以有多个 Waker 引用，用于唤醒任务继续执行。 **Notified**：用于追踪任务是否被通知。 **Unowned**：用于任务不在运行时管理下的引用，通常用于阻塞任务或测试。  Unowned 类型会占用两个引用计数，而其他引用类型只占用一个，Unowned 通过std::mem::forget函数保证了两个引用计数 任务状态任务的状态通过一个原子 usize...</div></div></div></div><nav id="pagination"><div class="pagination"><span class="page-number current">1</span><a class="page-number" href="/page/2/#content-inner">2</a><a class="extend next" rel="next" href="/page/2/#content-inner"><i class="fas fa-chevron-right fa-fw"></i></a></div></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://avatars.githubusercontent.com/u/134052685?s=400&amp;u=6df3485aa0fbf1016b0d5e00de4cfd71630a5f57&amp;v=4" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Zhaixx</div><div class="author-info-description"></div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">11</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">0</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">3</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Zia6"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/Zia6" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:z20230404@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/05/18/hello-world/" title="Hello World">Hello World</a><time datetime="2025-05-18T06:00:17.350Z" title="发表于 2025-05-18 14:00:17">2025-05-18</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/02/20/SQL%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90/" title="SQL性能分析">SQL性能分析</a><time datetime="2025-02-20T13:12:18.000Z" title="发表于 2025-02-20 21:12:18">2025-02-20</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/02/20/%E4%B8%BA%E4%BB%80%E4%B9%88InnoDb%E9%87%87%E7%94%A8B-%E6%A0%91%E7%B4%A2%E5%BC%95%E8%80%8C%E4%B8%8D%E6%98%AFB%E6%A0%91%E6%88%96%E8%80%85Hash/" title="为什么InnoDb采用B+树索引而不是B树或者Hash">为什么InnoDb采用B+树索引而不是B树或者Hash</a><time datetime="2025-02-20T12:52:02.000Z" title="发表于 2025-02-20 20:52:02">2025-02-20</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/02/18/Mysql%E5%AD%A6%E4%B9%A0%E6%97%A5%E8%AE%B0/" title="Mysql事务和存储引擎">Mysql事务和存储引擎</a><time datetime="2025-02-18T05:28:19.000Z" title="发表于 2025-02-18 13:28:19">2025-02-18</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/12/23/S6-081-fs%E8%A7%A3%E6%9E%90/" title="S6.081 fs解析">S6.081 fs解析</a><time datetime="2024-12-23T02:12:32.000Z" title="发表于 2024-12-23 10:12:32">2024-12-23</time></div></div></div></div><div class="card-widget card-categories"><div class="item-headline">
+            <i class="fas fa-folder-open"></i>
+            <span>分类</span>
+            
+          </div>
+          <ul class="card-category-list" id="aside-cat-list">
+            <li class="card-category-list-item "><a class="card-category-list-link" href="/categories/Mysql/"><span class="card-category-list-name">Mysql</span><span class="card-category-list-count">1</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/S6-081-lab%E8%A7%A3%E6%9E%90/"><span class="card-category-list-name">S6.081 lab解析</span><span class="card-category-list-count">3</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/Tokio/"><span class="card-category-list-name">Tokio</span><span class="card-category-list-count">4</span></a></li>
+          </ul></div><div class="card-widget card-archives">
+    <div class="item-headline">
+      <i class="fas fa-archive"></i>
+      <span>归档</span>
+      
+    </div>
+    <ul class="card-archive-list">
+  
+      <li class="card-archive-list-item">
+        <a class="card-archive-list-link" href="/archives/2025/05/">
+          <span class="card-archive-list-date">五月 2025</span>
+          <span class="card-archive-list-count">1</span>
+        </a>
+      </li>
+    
+      <li class="card-archive-list-item">
+        <a class="card-archive-list-link" href="/archives/2025/02/">
+          <span class="card-archive-list-date">二月 2025</span>
+          <span class="card-archive-list-count">3</span>
+        </a>
+      </li>
+    
+      <li class="card-archive-list-item">
+        <a class="card-archive-list-link" href="/archives/2024/12/">
+          <span class="card-archive-list-date">十二月 2024</span>
+          <span class="card-archive-list-count">7</span>
+        </a>
+      </li>
+    </ul></div><div class="card-widget card-webinfo"><div class="item-headline"><i class="fas fa-chart-line"></i><span>网站信息</span></div><div class="webinfo"><div class="webinfo-item"><div class="item-name">文章数目 :</div><div class="item-count">11</div></div><div class="webinfo-item"><div class="item-name">本站访客数 :</div><div class="item-count" id="busuanzi_value_site_uv"><i class="fa-solid fa-spinner fa-spin"></i></div></div><div class="webinfo-item"><div class="item-name">本站总浏览量 :</div><div class="item-count" id="busuanzi_value_site_pv"><i class="fa-solid fa-spinner fa-spin"></i></div></div><div class="webinfo-item"><div class="item-name">最后更新时间 :</div><div class="item-count" id="last-push-date" data-lastPushDate="2025-05-18T06:10:35.465Z"><i class="fa-solid fa-spinner fa-spin"></i></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2024 - 2025 By Zhaixx</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text">Hi, welcome to my <a target="_blank" rel="noopener" href="https://butterfly.js.org/">blog</a>!</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
