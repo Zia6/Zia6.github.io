@@ -85,6 +85,14 @@ GFS 的快照操作能够几乎瞬间地复制文件或目录树（“源文件/
     *   **元数据复制：** 租约被撤销或过期后，Master 将快照操作记录到日志中并持久化，然后在内存中**复制源文件的元数据**。重要的是，新创建的快照文件（副本）的元数据会**指向与源文件完全相同的底层数据块 (Chunk)**。此时并没有实际的数据复制发生。
     *   **第一次写入触发复制：** 当客户端第一次尝试写入一个被快照共享的 Chunk 时，Master 会检测到该 Chunk 的引用计数大于一。Master 会延迟响应，并指示原 Chunkserver 创建一个**新 Chunk 的副本**。这个新副本只包含旧 Chunk 的数据。由于新 Chunk 在与原 Chunk 相同的 Chunkserver 上创建，数据可以在本地高效复制（无需通过网络传输）。一旦新 Chunk 创建完成，Master 会将写入权限授予客户端，客户端就可以像操作普通 Chunk 一样进行写入，而无需知道背后的 CoW 机制。
 
+# 参考资料
+- [The Google File System(2003)](https://static.googleusercontent.com/media/research.google.com/zh-CN//archive/gfs-sosp2003.pdf)
+- [大数据基础笔记(3)：思考GFS的一致性设计](https://juejin.cn/post/7015226915392847902)
+
+
+
+
+
 
 
 
