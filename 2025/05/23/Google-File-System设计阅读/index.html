@@ -158,7 +158,7 @@
 <li><strong>高并发追加需求：</strong> 系统必须高效地为并发追加到同一文件的多个客户端实现定义良好的语义。例如，文件常被用作<strong>生产者-消费者队列</strong>（多个生产者并发写入文件末尾，消费者从文件头部读取），这要求并发写入时每个操作都能保证原子性。</li>
 <li><strong>高带宽优先于低延迟：</strong> 对于大多数目标应用（如批处理任务），持续的高数据传输带宽远比单次操作的低延迟更为重要。系统更侧重于批处理数据的高吞吐量，而非单个读写的响应时间。</li>
 </ul>
-<h1 id="具体设计"><a href="#具体设计" class="headerlink" title="具体设计"></a>具体设计</h1><h2 id="架构设计"><a href="#架构设计" class="headerlink" title="架构设计"></a>架构设计</h2><p><img src="/2025/02/18/Mysql%E5%AD%A6%E4%B9%A0%E6%97%A5%E8%AE%B0/e-System%E8%AE%BE%E8%AE%A1%E9%98%85%E8%AF%BB/image.png" alt="GFS 架构图"><br><em>图1: GFS 集群架构概览</em></p>
+<h1 id="具体设计"><a href="#具体设计" class="headerlink" title="具体设计"></a>具体设计</h1><h2 id="架构设计"><a href="#架构设计" class="headerlink" title="架构设计"></a>架构设计</h2><p><img src="/2025/05/23/Google-File-System%E8%AE%BE%E8%AE%A1%E9%98%85%E8%AF%BB/image.png" alt="GFS 架构图"><br><em>图1: GFS 集群架构概览</em></p>
 <p>一个 GFS 集群由以下几个核心组件构成：</p>
 <ul>
 <li><strong>单个 Master 服务器：</strong> GFS 集群的核心。Master 负责维护整个文件系统的元数据，包括：<ul>
@@ -191,7 +191,7 @@
 <li><strong>不依赖</strong>并发追加的绝对顺序，如果顺序很重要，需在应用层自己添加序列号。</li>
 </ul>
 </li>
-<li>这种设计牺牲了传统文件系统的严格“恰好一次”和精确顺序保证，换取了<strong>高并发写入的吞吐量和原子性</strong>。<br><img src="/2025/02/18/Mysql%E5%AD%A6%E4%B9%A0%E6%97%A5%E8%AE%B0/e-System%E8%AE%BE%E8%AE%A1%E9%98%85%E8%AF%BB/RegionState.png" alt="突变后的文件区域状态"><br>这里我们解释一下论文中介绍的当操作后一个区域的状态</li>
+<li>这种设计牺牲了传统文件系统的严格“恰好一次”和精确顺序保证，换取了<strong>高并发写入的吞吐量和原子性</strong>。<br><img src="/2025/05/23/Google-File-System%E8%AE%BE%E8%AE%A1%E9%98%85%E8%AF%BB/RegionState.png" alt="突变后的文件区域状态"><br>这里我们解释一下论文中介绍的当操作后一个区域的状态</li>
 </ul>
 </li>
 </ul>
@@ -212,7 +212,7 @@
 </li>
 </ul>
 <h2 id="控制流"><a href="#控制流" class="headerlink" title="控制流"></a>控制流</h2><p>GFS 通过“租约 (Lease)”机制来协调对 Chunk 的修改顺序，确保副本之间的一致性。</p>
-<p><img src="/2025/02/18/Mysql%E5%AD%A6%E4%B9%A0%E6%97%A5%E8%AE%B0/e-System%E8%AE%BE%E8%AE%A1%E9%98%85%E8%AF%BB/%E5%86%99%E5%85%A5%E6%95%B0%E6%8D%AE%E5%92%8C%E6%8E%A7%E5%88%B6%E6%B5%81.png" alt="写入数据和控制流"><br><em>图2: GFS 数据写入和控制流示意图</em></p>
+<p><img src="/2025/05/23/Google-File-System%E8%AE%BE%E8%AE%A1%E9%98%85%E8%AF%BB/%E5%86%99%E5%85%A5%E6%95%B0%E6%8D%AE%E5%92%8C%E6%8E%A7%E5%88%B6%E6%B5%81.png" alt="写入数据和控制流"><br><em>图2: GFS 数据写入和控制流示意图</em></p>
 <p>当客户端需要修改一个 Chunk 时，其控制流如下：</p>
 <ol>
 <li><strong>租约获取：</strong> 客户端首先向 Master 询问哪个 Chunkserver 持有该 Chunk 的当前租约（即 Primary Chunkserver）以及其他副本的位置。如果当前没有 Chunkserver 持有租约，Master 会将其选择的 Chunkserver 授予租约。</li>
