@@ -1,0 +1,447 @@
+<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Java 内存模型 (JMM) 深入解析 —— 内存屏障、volatile 与 synchronized 原理 | Zhaixx's Blog</title><meta name="author" content="Zhaixx"><meta name="copyright" content="Zhaixx"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="Java 内存模型 (JMM) 深入解析 —— 内存屏障、volatile 与 synchronized 原理 从 Java 内存模型出发，详细剖析 volatile 和 synchronized 如何通过内存屏障保障可见性与有序性，彻底掌握 CPU 与编译器优化下的并发底层原理。   目录 1. 什么是 JMM？ 2. 重排序问题简述 3. 内存屏障概念 3.1 内存屏障分类   4. vola">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Java 内存模型 (JMM) 深入解析 —— 内存屏障、volatile 与 synchronized 原理">
+<meta property="og:url" content="https://zia6.github.io/2025/03/18/Java-%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B-JMM-%E6%B7%B1%E5%85%A5%E8%A7%A3%E6%9E%90-%E2%80%94%E2%80%94-%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E3%80%81volatile-%E4%B8%8E-synchronized-%E5%8E%9F%E7%90%86/index.html">
+<meta property="og:site_name" content="Zhaixx&#39;s Blog">
+<meta property="og:description" content="Java 内存模型 (JMM) 深入解析 —— 内存屏障、volatile 与 synchronized 原理 从 Java 内存模型出发，详细剖析 volatile 和 synchronized 如何通过内存屏障保障可见性与有序性，彻底掌握 CPU 与编译器优化下的并发底层原理。   目录 1. 什么是 JMM？ 2. 重排序问题简述 3. 内存屏障概念 3.1 内存屏障分类   4. vola">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://avatars.githubusercontent.com/u/134052685?s=400&u=6df3485aa0fbf1016b0d5e00de4cfd71630a5f57&v=4">
+<meta property="article:published_time" content="2025-03-18T06:31:13.000Z">
+<meta property="article:modified_time" content="2025-07-18T11:45:45.062Z">
+<meta property="article:author" content="Zhaixx">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://avatars.githubusercontent.com/u/134052685?s=400&u=6df3485aa0fbf1016b0d5e00de4cfd71630a5f57&v=4"><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://zia6.github.io/2025/03/18/Java-%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B-JMM-%E6%B7%B1%E5%85%A5%E8%A7%A3%E6%9E%90-%E2%80%94%E2%80%94-%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E3%80%81volatile-%E4%B8%8E-synchronized-%E5%8E%9F%E7%90%86/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: '复制成功',
+    error: '复制失败',
+    noSupport: '浏览器不支持'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: '刚刚',
+    min: '分钟前',
+    hour: '小时前',
+    day: '天前',
+    month: '个月前'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid/dist/infinitegrid.min.js',
+    buttonText: '加载更多'
+  },
+  isPhotoFigcaption: false,
+  islazyload: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Java 内存模型 (JMM) 深入解析 —— 内存屏障、volatile 与 synchronized 原理',
+  isPost: true,
+  isHome: false,
+  isHighlightShrink: false,
+  isToc: true,
+  isShuoshuo: false
+}</script><meta name="generator" content="Hexo 7.3.0"></head><body><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">Zhaixx's Blog</span></a><a class="nav-page-title" href="/"><span class="site-name">Java 内存模型 (JMM) 深入解析 —— 内存屏障、volatile 与 synchronized 原理</span></a></span><div id="menus"></div></nav><div id="post-info"><h1 class="post-title">Java 内存模型 (JMM) 深入解析 —— 内存屏障、volatile 与 synchronized 原理</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2025-03-18T06:31:13.000Z" title="发表于 2025-03-18 14:31:13">2025-03-18</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2025-07-18T11:45:45.062Z" title="更新于 2025-07-18 19:45:45">2025-07-18</time></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="Java-内存模型-JMM-深入解析-——-内存屏障、volatile-与-synchronized-原理"><a href="#Java-内存模型-JMM-深入解析-——-内存屏障、volatile-与-synchronized-原理" class="headerlink" title="Java 内存模型 (JMM) 深入解析 —— 内存屏障、volatile 与 synchronized 原理"></a>Java 内存模型 (JMM) 深入解析 —— 内存屏障、volatile 与 synchronized 原理</h1><blockquote>
+<p>从 Java 内存模型出发，详细剖析 volatile 和 synchronized 如何通过内存屏障保障可见性与有序性，彻底掌握 CPU 与编译器优化下的并发底层原理。</p>
+</blockquote>
+<hr>
+<h2 id="目录"><a href="#目录" class="headerlink" title="目录"></a>目录</h2><ul>
+<li><a href="#1-%E4%BB%80%E4%B9%88%E6%98%AF-jmm">1. 什么是 JMM？</a></li>
+<li><a href="#2-%E9%87%8D%E6%8E%92%E5%BA%8F%E9%97%AE%E9%A2%98%E7%AE%80%E8%BF%B0">2. 重排序问题简述</a></li>
+<li><a href="#3-%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E6%A6%82%E5%BF%B5">3. 内存屏障概念</a><ul>
+<li><a href="#31-%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E5%88%86%E7%B1%BB">3.1 内存屏障分类</a></li>
+</ul>
+</li>
+<li><a href="#4-volatile-%E4%B8%8E%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C">4. volatile 与内存屏障</a><ul>
+<li><a href="#41-%E5%86%85%E5%AD%98%E8%AF%AD%E4%B9%89">4.1 内存语义</a></li>
+<li><a href="#42-jvm-%E5%AF%B9-volatile-%E6%8F%92%E5%85%A5%E7%9A%84%E5%B1%8F%E9%9A%9C">4.2 JVM 对 volatile 插入的屏障</a></li>
+<li><a href="#43-%E7%A4%BA%E4%BE%8B%E5%88%86%E6%9E%90">4.3 示例分析</a></li>
+</ul>
+</li>
+<li><a href="#5-synchronized-%E4%B8%8E%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C">5. synchronized 与内存屏障</a><ul>
+<li><a href="#51-%E5%86%85%E5%AD%98%E8%AF%AD%E4%B9%89">5.1 内存语义</a></li>
+<li><a href="#52-%E5%AD%97%E8%8A%82%E7%A0%81-monitorenter-monitorexit-%E5%AF%B9%E5%BA%94%E5%B1%8F%E9%9A%9C">5.2 字节码 monitorenter&#x2F;monitorexit 对应屏障</a></li>
+<li><a href="#53-%E7%A4%BA%E4%BE%8B%E5%88%86%E6%9E%90">5.3 示例分析</a></li>
+</ul>
+</li>
+<li><a href="#6-%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E6%80%BB%E7%BB%93">6. 内存屏障总结</a></li>
+<li><a href="#7-volatile-%E4%B8%8E-synchronized-%E5%B1%8F%E9%9A%9C%E5%AF%B9%E6%AF%94">7. volatile 与 synchronized 屏障对比</a></li>
+<li><a href="#8-happens-before-%E8%A7%84%E5%88%99%E8%AF%A6%E8%A7%A3">8. happens-before 规则详解</a></li>
+</ul>
+<hr>
+<h2 id="1-什么是-JMM？"><a href="#1-什么是-JMM？" class="headerlink" title="1. 什么是 JMM？"></a>1. 什么是 JMM？</h2><p>Java 内存模型（JMM, Java Memory Model）定义了 <strong>多线程之间可见性、有序性、原子性</strong> 的规则，主要解决 CPU 缓存一致性、编译器优化与线程通信问题。</p>
+<p>JMM 并不直接对应物理硬件，而是一组抽象规范，其核心：</p>
+<ul>
+<li><strong>主内存</strong>：共享变量存储位置。</li>
+<li><strong>工作内存</strong>：每个线程独享的变量副本。</li>
+<li><strong>内存交互操作</strong>：load、store、read、write 指令。</li>
+</ul>
+<hr>
+<h2 id="2-重排序问题简述"><a href="#2-重排序问题简述" class="headerlink" title="2. 重排序问题简述"></a>2. 重排序问题简述</h2><p>现代 CPU 和编译器为了提升性能，常做如下优化：</p>
+<ul>
+<li><strong>指令重排序</strong>：代码指令执行顺序不同于源代码顺序。</li>
+<li><strong>缓存一致性问题</strong>：每个 CPU 核心有 L1&#x2F;L2 缓存，写入主内存不及时，导致线程间数据不一致。</li>
+</ul>
+<p>JMM 保证：</p>
+<ol>
+<li>单线程内 <strong>as-if-serial</strong> 语义，重排序不影响单线程结果。</li>
+<li>多线程通过 <strong>happens-before</strong> 关系保证关键指令顺序。</li>
+</ol>
+<hr>
+<h2 id="3-内存屏障概念"><a href="#3-内存屏障概念" class="headerlink" title="3. 内存屏障概念"></a>3. 内存屏障概念</h2><p>内存屏障（Memory Barrier &#x2F; Fence）是 CPU 提供的指令，用来防止特定的指令重排序，或强制刷新缓存，保证可见性和有序性。</p>
+<h3 id="3-1-内存屏障分类"><a href="#3-1-内存屏障分类" class="headerlink" title="3.1 内存屏障分类"></a>3.1 内存屏障分类</h3><table>
+<thead>
+<tr>
+<th>屏障类型</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>LoadLoadBarrier</td>
+<td>屏障前的所有 <strong>读</strong> 操作完成，才能执行后续读</td>
+</tr>
+<tr>
+<td>StoreStoreBarrier</td>
+<td>屏障前的所有 <strong>写</strong> 操作完成，才能执行后续写</td>
+</tr>
+<tr>
+<td>LoadStoreBarrier</td>
+<td>屏障前的所有 <strong>读</strong> 操作完成，才能执行后续写</td>
+</tr>
+<tr>
+<td>StoreLoadBarrier</td>
+<td>屏障前所有 <strong>写</strong> 操作完成，并刷新到主存，后续读操作需重新加载主存</td>
+</tr>
+</tbody></table>
+<hr>
+<h2 id="4-volatile-与内存屏障"><a href="#4-volatile-与内存屏障" class="headerlink" title="4. volatile 与内存屏障"></a>4. volatile 与内存屏障</h2><p><code>volatile</code> 是 JMM 关键字，用于保证变量的 <strong>可见性</strong> 和 <strong>有序性</strong>，但不保证原子性。</p>
+<h3 id="4-1-内存语义"><a href="#4-1-内存语义" class="headerlink" title="4.1 内存语义"></a>4.1 内存语义</h3><ol>
+<li><strong>可见性</strong>：对一个 volatile 变量写入，所有线程立刻可见。</li>
+<li><strong>禁止指令重排序</strong>：volatile 前后的指令不会被重排。</li>
+</ol>
+<h3 id="4-2-JVM-对-volatile-插入的屏障"><a href="#4-2-JVM-对-volatile-插入的屏障" class="headerlink" title="4.2 JVM 对 volatile 插入的屏障"></a>4.2 JVM 对 volatile 插入的屏障</h3><p>JVM 在 volatile 读&#x2F;写指令插入特定屏障：</p>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>内存屏障</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>volatile 写</td>
+<td><strong>StoreStoreBarrier + StoreLoadBarrier</strong> ：确保写操作对其他线程立即可见</td>
+</tr>
+<tr>
+<td>volatile 读</td>
+<td><strong>LoadLoadBarrier + LoadStoreBarrier</strong> ：确保读操作不会被提前</td>
+</tr>
+</tbody></table>
+<p>HotSpot 中对应：</p>
+<ul>
+<li>volatile 写 → <code>lock addl</code> 指令 + StoreLoad 屏障（x86 上 lock 指令本身具备内存屏障效果）。</li>
+<li>volatile 读 → <code>mov</code> 普通加载，配合 CPU 硬件层面缓存一致性协议（如 MESI 协议）。</li>
+</ul>
+<h3 id="4-3-示例分析"><a href="#4-3-示例分析" class="headerlink" title="4.3 示例分析"></a>4.3 示例分析</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">VolatileExample</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="type">boolean</span> <span class="variable">flag</span> <span class="operator">=</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">writer</span><span class="params">()</span> &#123;</span><br><span class="line">        flag = <span class="literal">true</span>; <span class="comment">// 写：StoreStore + StoreLoad 屏障</span></span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">reader</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">if</span> (flag) &#123;  <span class="comment">// 读：LoadLoad + LoadStore 屏障</span></span><br><span class="line">            <span class="comment">// 确保看到最新 flag</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>保证</strong>：</p>
+<ol>
+<li><code>writer()</code> 方法对 flag 的写操作对其他线程立刻可见。</li>
+<li><code>reader()</code> 方法读取 flag 时，flag 前后的指令不会重排序。</li>
+</ol>
+<h2 id="5-synchronized-与内存屏障"><a href="#5-synchronized-与内存屏障" class="headerlink" title="5. synchronized 与内存屏障"></a>5. synchronized 与内存屏障</h2><p><code>synchronized</code> 由 JVM 层实现，依靠 <strong>Monitor 锁</strong> 机制，同时隐式使用内存屏障，保证可见性与有序性。</p>
+<h3 id="5-1-内存语义"><a href="#5-1-内存语义" class="headerlink" title="5.1 内存语义"></a>5.1 内存语义</h3><ol>
+<li><strong>可见性</strong>：线程获取锁时，必须刷新工作内存中共享变量，获取主内存中最新值。</li>
+<li><strong>有序性</strong>：解锁前，必须将对共享变量的修改刷新到主内存，且解锁过程与之前操作不会发生重排序。</li>
+</ol>
+<h3 id="5-2-字节码-monitorenter-monitorexit-对应屏障"><a href="#5-2-字节码-monitorenter-monitorexit-对应屏障" class="headerlink" title="5.2 字节码 monitorenter&#x2F;monitorexit 对应屏障"></a>5.2 字节码 monitorenter&#x2F;monitorexit 对应屏障</h3><p><code>synchronized</code> 编译后会生成：</p>
+<ul>
+<li><code>monitorenter</code> → 获取锁</li>
+<li><code>monitorexit</code> → 释放锁</li>
+</ul>
+<p>HotSpot 虚拟机在这两个指令前后隐式插入屏障：</p>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>内存屏障</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>monitorenter</td>
+<td><strong>StoreStoreBarrier + LoadLoadBarrier + LoadStoreBarrier</strong>：解锁前刷新主存，禁止重排</td>
+</tr>
+<tr>
+<td>monitorexit</td>
+<td><strong>StoreStoreBarrier</strong> ：释放锁后，写入主存可见</td>
+</tr>
+</tbody></table>
+<p>具体行为：</p>
+<ul>
+<li><strong>monitorenter 前</strong>：先清空工作内存，保证后续读取最新主内存值。</li>
+<li><strong>monitorexit 后</strong>：将工作内存中共享变量的修改刷新到主存。</li>
+</ul>
+<h3 id="5-3-示例分析"><a href="#5-3-示例分析" class="headerlink" title="5.3 示例分析"></a>5.3 示例分析</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">SyncExample</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="type">int</span> <span class="variable">count</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title function_">increment</span><span class="params">()</span> &#123;</span><br><span class="line">        count++; <span class="comment">// monitorenter + 屏障</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>执行过程：</p>
+<ol>
+<li><strong>monitorenter</strong> 之前，清空工作内存中 count，保证读取最新主存值。</li>
+<li>count++ 操作完成后，在 <strong>monitorexit</strong> 之前，强制将 count 写回主存。</li>
+<li>其他线程获取锁后，读取到的是最新 count 值。</li>
+</ol>
+<hr>
+<h2 id="6-内存屏障总结"><a href="#6-内存屏障总结" class="headerlink" title="6. 内存屏障总结"></a>6. 内存屏障总结</h2><table>
+<thead>
+<tr>
+<th>关键字</th>
+<th>内存屏障插入点</th>
+<th>屏障类型</th>
+<th>保证效果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>volatile 写</td>
+<td>写操作前后</td>
+<td>StoreStoreBarrier + StoreLoadBarrier</td>
+<td>写入对其他线程立即可见，禁止重排序</td>
+</tr>
+<tr>
+<td>volatile 读</td>
+<td>读操作前后</td>
+<td>LoadLoadBarrier + LoadStoreBarrier</td>
+<td>保证读取到主内存最新值，禁止读重排序</td>
+</tr>
+<tr>
+<td>synchronized</td>
+<td>monitorenter &amp; monitorexit 处</td>
+<td>StoreStoreBarrier + LoadLoadBarrier + LoadStoreBarrier</td>
+<td>保证进入锁后读取最新值，退出锁前刷新主存</td>
+</tr>
+</tbody></table>
+<p><strong>volatile 和 synchronized 虽实现机制不同，但最终都借助内存屏障确保多线程的可见性和有序性，关键区别在于是否保证原子性。</strong></p>
+<h2 id="7-volatile-与-synchronized-屏障对比"><a href="#7-volatile-与-synchronized-屏障对比" class="headerlink" title="7. volatile 与 synchronized 屏障对比"></a>7. volatile 与 synchronized 屏障对比</h2><table>
+<thead>
+<tr>
+<th>特性</th>
+<th>volatile</th>
+<th>synchronized</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>可见性</td>
+<td>保证所有线程立即可见</td>
+<td>保证线程释放锁前刷新主存，获取锁时读取最新值</td>
+</tr>
+<tr>
+<td>有序性</td>
+<td>防止指令重排序，特别是读写相关指令</td>
+<td>锁释放前后指令严格禁止重排</td>
+</tr>
+<tr>
+<td>原子性</td>
+<td>不保证</td>
+<td>保证（临界区操作整体原子）</td>
+</tr>
+<tr>
+<td>内存屏障位置</td>
+<td>读写操作前后均插入屏障</td>
+<td>monitorenter、monitorexit 处插入屏障</td>
+</tr>
+<tr>
+<td>屏障种类</td>
+<td>读：LoadLoad + LoadStore<br>写：StoreStore + StoreLoad</td>
+<td>StoreStore + LoadLoad + LoadStore</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>简单状态标志、状态通知</td>
+<td>复杂原子性操作、需要锁保护的临界区</td>
+</tr>
+</tbody></table>
+<h3 id="📌-核心区别总结"><a href="#📌-核心区别总结" class="headerlink" title="📌 核心区别总结"></a>📌 核心区别总结</h3><ol>
+<li><strong>volatile 更轻量</strong>，适用于变量状态标志切换，读写频繁但无复合操作。</li>
+<li><strong>synchronized 更强大</strong>，不仅保证可见性、有序性，还提供原子性，适用于完整临界区保护。</li>
+<li>屏障位置不同：volatile 细粒度作用在变量读写，synchronized 作用于方法&#x2F;代码块整体。</li>
+<li><strong>底层实现区别</strong>：volatile 依赖 CPU 硬件层 Cache 一致性 + 屏障，synchronized 借助 JVM Monitor 结构控制锁获取与释放。</li>
+</ol>
+<h2 id="8-happens-before-规则详解"><a href="#8-happens-before-规则详解" class="headerlink" title="8. happens-before 规则详解"></a>8. happens-before 规则详解</h2><p>Java 内存模型通过 <strong>happens-before 规则</strong>，规定了操作之间的可见性与有序性保障。</p>
+<p>简单来说：</p>
+<blockquote>
+<p><strong>前一个操作的结果对后续操作可见，并且前一个操作的执行顺序在后一个操作之前。</strong></p>
+</blockquote>
+<h3 id="8-1-happens-before-主要规则"><a href="#8-1-happens-before-主要规则" class="headerlink" title="8.1 happens-before 主要规则"></a>8.1 happens-before 主要规则</h3><table>
+<thead>
+<tr>
+<th>规则编号</th>
+<th>规则内容</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td><strong>程序顺序规则</strong></td>
+<td>单线程内，按照代码顺序执行</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>锁规则</strong></td>
+<td>一个线程解锁，接下来获取该锁的线程能看到前线程释放锁时的结果</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>volatile 变量规则</strong></td>
+<td>对 volatile 变量的写，先行发生于后续对同一个变量的读</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>传递性规则</strong></td>
+<td>A happens-before B，B happens-before C，则 A happens-before C</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>线程启动规则</strong></td>
+<td>Thread.start() 先行发生于该线程执行的每一步</td>
+</tr>
+<tr>
+<td>6</td>
+<td><strong>线程终结规则</strong></td>
+<td>Thread.join() 先行发生于主线程继续</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>线程中断规则</strong></td>
+<td>调用线程 interrupt() 先行发生于目标线程检测到中断</td>
+</tr>
+<tr>
+<td>8</td>
+<td><strong>对象终结规则</strong></td>
+<td>对象的构造完成，其他线程能看到这个对象引用</td>
+</tr>
+</tbody></table>
+<hr>
+<h3 id="8-2-结合-volatile-和-synchronized-理解"><a href="#8-2-结合-volatile-和-synchronized-理解" class="headerlink" title="8.2 结合 volatile 和 synchronized 理解"></a>8.2 结合 volatile 和 synchronized 理解</h3><h4 id="synchronized-与-happens-before"><a href="#synchronized-与-happens-before" class="headerlink" title="synchronized 与 happens-before"></a>synchronized 与 happens-before</h4><ul>
+<li><strong>释放锁 → 获取锁</strong>，构成 happens-before 关系。</li>
+<li>保证同步块内修改的变量对之后持有锁的线程可见。</li>
+</ul>
+<h4 id="volatile-与-happens-before"><a href="#volatile-与-happens-before" class="headerlink" title="volatile 与 happens-before"></a>volatile 与 happens-before</h4><ul>
+<li><strong>写 volatile → 读 volatile</strong>，构成 happens-before 关系。</li>
+<li>保证写线程对 volatile 变量的更新对之后读线程立即可见。</li>
+</ul>
+<hr>
+<h3 id="8-3-示例"><a href="#8-3-示例" class="headerlink" title="8.3 示例"></a>8.3 示例</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">volatile</span> <span class="type">boolean</span> <span class="variable">flag</span> <span class="operator">=</span> <span class="literal">false</span>;</span><br><span class="line"><span class="type">int</span> <span class="variable">data</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">Thread <span class="number">1</span>:                   Thread <span class="number">2</span>:</span><br><span class="line">data = <span class="number">42</span>;                 <span class="keyword">if</span> (flag) &#123;</span><br><span class="line">flag = <span class="literal">true</span>;                   System.out.println(data);</span><br><span class="line">&#125;                          &#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>解析</strong>：</p>
+<ul>
+<li>Thread 1 中 <code>flag = true</code> happens-before Thread 2 中 <code>if (flag)</code> 读取。</li>
+<li>所以，Thread 2 若读到 flag 为 true，必然也能看到 data &#x3D; 42。</li>
+</ul>
+<hr>
+<h2 id="📌-总结"><a href="#📌-总结" class="headerlink" title="📌 总结"></a>📌 总结</h2><p>happens-before 规则是 JMM 保证并发可见性、有序性的核心理论支撑，</p>
+<ul>
+<li>synchronized 和 volatile 的内存屏障实现，都是为了实现 <strong>特定的 happens-before 关系</strong>。</li>
+<li>理解 happens-before 有助于正确使用锁、volatile 和设计线程安全程序。</li>
+</ul>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://zia6.github.io">Zhaixx</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://zia6.github.io/2025/03/18/Java-%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B-JMM-%E6%B7%B1%E5%85%A5%E8%A7%A3%E6%9E%90-%E2%80%94%E2%80%94-%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E3%80%81volatile-%E4%B8%8E-synchronized-%E5%8E%9F%E7%90%86/">https://zia6.github.io/2025/03/18/Java-%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B-JMM-%E6%B7%B1%E5%85%A5%E8%A7%A3%E6%9E%90-%E2%80%94%E2%80%94-%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E3%80%81volatile-%E4%B8%8E-synchronized-%E5%8E%9F%E7%90%86/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://zia6.github.io" target="_blank">Zhaixx's Blog</a>！</span></div></div><div class="tag_share"><div class="post-share"><div class="social-share" data-image="https://avatars.githubusercontent.com/u/134052685?s=400&amp;u=6df3485aa0fbf1016b0d5e00de4cfd71630a5f57&amp;v=4" data-sites="facebook,twitter,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2025/05/18/hello-world/" title="Hello World"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">Hello World</div></div><div class="info-2"><div class="info-item-1">Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub. Quick StartCreate a new post1$ hexo new &quot;My New Post&quot;  More info: Writing Run server1$ hexo server  More info: Server Generate static files1$ hexo generate  More info: Generating Deploy to remote sites1$ hexo deploy  More info: Deployment </div></div></div></a><a class="pagination-related" href="/2025/03/18/JUC-%E5%A4%9A%E7%BA%BF%E7%A8%8B%E9%94%81%E5%8E%9F%E7%90%86%E8%AF%A6%E8%A7%A3/" title="JUC-多线程锁原理详解"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">JUC-多线程锁原理详解</div></div><div class="info-2"><div class="info-item-1">Java 多线程锁原理详解 —— 从字节码到 JVM 实现全解Java 并发编程离不开对“锁”机制的理解与掌握。无论是最基础的 synchronized，还是功能丰富的 ReentrantLock，亦或是高效提升读操作性能的 ReadWriteLock，它们背后蕴含的实现原理和适用场景各有千秋。 本文将从为什么需要锁讲起，结合 字节码、JVM 实现，一步步剖析各类锁的底层机制，帮助你彻底掌握多线程锁的原理。  目录 1. 为什么需要锁？ 2. 可重入锁是什么？ 3. synchronized 详解 3.1 基本用法 3.2 字节码与 JVM 实现 3.3 优缺点总结   4. wait&#x2F;notify 机制详解 5. ReentrantLock 详解 5.1 基本用法 5.2 公平锁与非公平锁 5.3 tryLock 与中断 5.4 Condition 精准唤醒 5.5 Condition vs wait&#x2F;notify 对比   6. 读写锁 ReadWriteLock 6.1 原理与用法 6.2 适用场景   7. StampedLock 简介 8....</div></div></div></a></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="https://avatars.githubusercontent.com/u/134052685?s=400&amp;u=6df3485aa0fbf1016b0d5e00de4cfd71630a5f57&amp;v=4" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">Zhaixx</div><div class="author-info-description"></div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">19</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">0</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">4</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/Zia6"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://github.com/Zia6" target="_blank" title="Github"><i class="fab fa-github" style="color: #24292e;"></i></a><a class="social-icon" href="mailto:z20230404@gmail.com" target="_blank" title="Email"><i class="fas fa-envelope" style="color: #4a7dbe;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#Java-%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B-JMM-%E6%B7%B1%E5%85%A5%E8%A7%A3%E6%9E%90-%E2%80%94%E2%80%94-%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E3%80%81volatile-%E4%B8%8E-synchronized-%E5%8E%9F%E7%90%86"><span class="toc-number">1.</span> <span class="toc-text">Java 内存模型 (JMM) 深入解析 —— 内存屏障、volatile 与 synchronized 原理</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%9B%AE%E5%BD%95"><span class="toc-number">1.1.</span> <span class="toc-text">目录</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#1-%E4%BB%80%E4%B9%88%E6%98%AF-JMM%EF%BC%9F"><span class="toc-number">1.2.</span> <span class="toc-text">1. 什么是 JMM？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#2-%E9%87%8D%E6%8E%92%E5%BA%8F%E9%97%AE%E9%A2%98%E7%AE%80%E8%BF%B0"><span class="toc-number">1.3.</span> <span class="toc-text">2. 重排序问题简述</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#3-%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E6%A6%82%E5%BF%B5"><span class="toc-number">1.4.</span> <span class="toc-text">3. 内存屏障概念</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#3-1-%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E5%88%86%E7%B1%BB"><span class="toc-number">1.4.1.</span> <span class="toc-text">3.1 内存屏障分类</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#4-volatile-%E4%B8%8E%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C"><span class="toc-number">1.5.</span> <span class="toc-text">4. volatile 与内存屏障</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#4-1-%E5%86%85%E5%AD%98%E8%AF%AD%E4%B9%89"><span class="toc-number">1.5.1.</span> <span class="toc-text">4.1 内存语义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-2-JVM-%E5%AF%B9-volatile-%E6%8F%92%E5%85%A5%E7%9A%84%E5%B1%8F%E9%9A%9C"><span class="toc-number">1.5.2.</span> <span class="toc-text">4.2 JVM 对 volatile 插入的屏障</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#4-3-%E7%A4%BA%E4%BE%8B%E5%88%86%E6%9E%90"><span class="toc-number">1.5.3.</span> <span class="toc-text">4.3 示例分析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#5-synchronized-%E4%B8%8E%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C"><span class="toc-number">1.6.</span> <span class="toc-text">5. synchronized 与内存屏障</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#5-1-%E5%86%85%E5%AD%98%E8%AF%AD%E4%B9%89"><span class="toc-number">1.6.1.</span> <span class="toc-text">5.1 内存语义</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-2-%E5%AD%97%E8%8A%82%E7%A0%81-monitorenter-monitorexit-%E5%AF%B9%E5%BA%94%E5%B1%8F%E9%9A%9C"><span class="toc-number">1.6.2.</span> <span class="toc-text">5.2 字节码 monitorenter&#x2F;monitorexit 对应屏障</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#5-3-%E7%A4%BA%E4%BE%8B%E5%88%86%E6%9E%90"><span class="toc-number">1.6.3.</span> <span class="toc-text">5.3 示例分析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#6-%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C%E6%80%BB%E7%BB%93"><span class="toc-number">1.7.</span> <span class="toc-text">6. 内存屏障总结</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#7-volatile-%E4%B8%8E-synchronized-%E5%B1%8F%E9%9A%9C%E5%AF%B9%E6%AF%94"><span class="toc-number">1.8.</span> <span class="toc-text">7. volatile 与 synchronized 屏障对比</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%F0%9F%93%8C-%E6%A0%B8%E5%BF%83%E5%8C%BA%E5%88%AB%E6%80%BB%E7%BB%93"><span class="toc-number">1.8.1.</span> <span class="toc-text">📌 核心区别总结</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#8-happens-before-%E8%A7%84%E5%88%99%E8%AF%A6%E8%A7%A3"><span class="toc-number">1.9.</span> <span class="toc-text">8. happens-before 规则详解</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#8-1-happens-before-%E4%B8%BB%E8%A6%81%E8%A7%84%E5%88%99"><span class="toc-number">1.9.1.</span> <span class="toc-text">8.1 happens-before 主要规则</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-2-%E7%BB%93%E5%90%88-volatile-%E5%92%8C-synchronized-%E7%90%86%E8%A7%A3"><span class="toc-number">1.9.2.</span> <span class="toc-text">8.2 结合 volatile 和 synchronized 理解</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#synchronized-%E4%B8%8E-happens-before"><span class="toc-number">1.9.2.1.</span> <span class="toc-text">synchronized 与 happens-before</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#volatile-%E4%B8%8E-happens-before"><span class="toc-number">1.9.2.2.</span> <span class="toc-text">volatile 与 happens-before</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#8-3-%E7%A4%BA%E4%BE%8B"><span class="toc-number">1.9.3.</span> <span class="toc-text">8.3 示例</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%F0%9F%93%8C-%E6%80%BB%E7%BB%93"><span class="toc-number">1.10.</span> <span class="toc-text">📌 总结</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/07/18/raft%E5%AE%9E%E7%8E%B0/" title="raft实现">raft实现</a><time datetime="2025-07-18T11:46:03.000Z" title="发表于 2025-07-18 19:46:03">2025-07-18</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/07/14/TCP-Reciver-Sender%E5%AE%9E%E7%8E%B0/" title="TCP Receiver Sender实现">TCP Receiver Sender实现</a><time datetime="2025-07-14T12:32:10.000Z" title="发表于 2025-07-14 20:32:10">2025-07-14</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/05/23/Google-File-System%E8%AE%BE%E8%AE%A1%E9%98%85%E8%AF%BB/" title="Google File System设计阅读">Google File System设计阅读</a><time datetime="2025-05-23T02:00:19.000Z" title="发表于 2025-05-23 10:00:19">2025-05-23</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/05/20/6-824Lab1-Mapreduce%E8%AE%BE%E8%AE%A1/" title="6.824Lab1-Mapreduce设计">6.824Lab1-Mapreduce设计</a><time datetime="2025-05-20T08:33:57.000Z" title="发表于 2025-05-20 16:33:57">2025-05-20</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2025/05/18/MapReduce%E5%AD%A6%E4%B9%A0/" title="MapReduce学习">MapReduce学习</a><time datetime="2025-05-18T06:11:49.000Z" title="发表于 2025-05-18 14:11:49">2025-05-18</time></div></div></div></div></div></div></main><footer id="footer"><div id="footer-wrap"><div class="copyright">&copy;2024 - 2025 By Zhaixx</div><div class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly</a></div><div class="footer_custom_text">Hi, welcome to my <a target="_blank" rel="noopener" href="https://butterfly.js.org/">blog</a>!</div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js"></script><script src="/js/main.js"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
