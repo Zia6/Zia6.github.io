@@ -2,7 +2,7 @@
 title: SQL性能分析
 date: 2025-02-20 21:12:18
 tags:
-catagories: MySQL
+categories: MySQL
 ---
 # SQL性能分析(MySQL)
 ## SQL执行频次查询

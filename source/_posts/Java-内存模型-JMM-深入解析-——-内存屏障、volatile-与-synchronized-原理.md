@@ -2,7 +2,7 @@
 title: Java 内存模型 (JMM) 深入解析 —— 内存屏障、volatile 与 synchronized 原理
 date: 2025-03-18 14:31:13
 tags:
-catagories: JUC
+categories: JUC
 
 ---
 

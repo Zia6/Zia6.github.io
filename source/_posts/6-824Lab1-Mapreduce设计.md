@@ -2,7 +2,7 @@
 title: 6.824Lab1-Mapreduce设计
 date: 2025-05-20 16:33:57
 tags:
-catagories: 6.824分布式系统
+categories: 6.824分布式系统
 ---
  
 ## 概述

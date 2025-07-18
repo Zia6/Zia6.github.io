@@ -2,7 +2,7 @@
 title: JUC-CompleteFuture总结
 date: 2025-03-18 09:42:02
 tags:
-catagories: JUC
+categories: JUC
 ---
 # CompletableFuture 完全指南
 

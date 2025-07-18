@@ -2,7 +2,7 @@
 title: MapReduce学习
 date: 2025-05-18 14:11:49
 tags:
-catagories: 6.824分布式系统
+categories: 6.824分布式系统
 ---
 
 ## 背景

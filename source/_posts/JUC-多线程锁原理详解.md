@@ -2,7 +2,7 @@
 title: JUC-多线程锁原理详解
 date: 2025-03-18 10:20:03
 tags:
-catagories: JUC
+categories: JUC
 ---
 
 # Java 多线程锁原理详解 —— 从字节码到 JVM 实现全解
