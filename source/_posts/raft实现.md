@@ -2,6 +2,7 @@
 title: raft实现
 date: 2025-07-18 19:46:03
 tags:
+categories: 6.824分布式系统
 ---
 ## Lab3 Raft实现
 ### 3A
