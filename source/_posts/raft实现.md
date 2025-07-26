@@ -5,6 +5,8 @@ tags:
 categories: 6.824分布式系统
 ---
 ## Lab3 Raft实现
+Raft的原理是通过一个日期机制和日志复制以及持久化保证一致性，每台服务器都有一个 Term，每个 Term 只会有一个 Leader，每次操作由 Leader 先追加日志再将日志同步给其他 follower，只要有多数确认了日志，则可以提交日志，即操作成功。我们通过在选举 leader 时增加对日志的限制即可保证被提交的日志一定不会被覆盖。
+
 ### 3A
 3A 主要是不考虑状态机的情况下，实现 Raft Leader选举和心跳机制，确保选举出单一 Leader，如果没有故障就保持 Leader，如果 Leader 故障或者包丢失，则选举新的 Leader
 #### ticker实现
@@ -27,7 +29,7 @@ categories: 6.824分布式系统
   - 后台向其他 server 发送 AppendEntries，超过 n/2 个 server 后更新 commitIndex，后台异步进行 apply
   - commitIndex 是根据每次 AppendEntries 进行更新的，事实上 commit 这个操作并没有实质性对 log 的操作，只是修改了 commitIndex 用于提交
 - 后台异步进行 apply(使用定时任务或条件变量(即只在 commitIndex 更新时通知 apply))
-
+我们需要做的就是在之前选举的基础上增加对日志的限制，即在选举时保证一个 server 只会对日志比它新的 candidater 投票，具体逻辑是如果 candidater 的 lastLogTerm 比当前 server 的大，或者如果 Term 一样，则比较 Index，如果 args 的下标大于等于当前 server，说明它的更新，且他们俩曾经在同一个 leader 领导下，我们这样可以证明一个被提交的 log 一定不会被覆盖，原因如下，在 n 个 server 中，有超过 n/2 的 server 包含这条日志，则选举时，至少 n/2 + 1 个 server 不会给一个不包含此日志的candidater 投票，因此一定不会出现一个 leader 不包含此日志，出现的 leader 一定包含所有被提交的日志。一条没被提交的日志有可能出现被覆盖或者不被覆盖，对此 raft 不做保证。
 ##### 一些bug
 进行 AppendEntries 时写出了这样的代码
 ```go
@@ -108,3 +110,46 @@ func (rf *Raft) Kill() {
 	}
 ```
 后续加上快照这里应该需要修改一下
+
+
+### 3D
+#### snapshot
+一个系统运行长时间后会导致 log 变得很长，因此我们考虑使用快照来压缩日志，将 index 前的日志全部删除，并保存当前状态机的 snapshot，维护一个 baseIndex，代表当前日志从 baseIndex 开始，每次快照后使 baseIndex = lastIncludedIndex + 1,参照论文实现 InstallSnapshotRpc 即可
+![InstallSnapShotRPC](InstallSnapshot.png)
+引入快照后需要考虑的一些地方
+- Leader 发送 AppendEntries 时，如果 nextIndex 已经被压缩，向 Follower 发送 InstallSnapshotRPC
+- Follower接收到 AppendEntries 时，如果 PrevLogIndex + len(entries) < baseIndex,直接返回成功保证幂等，如果 PrevLogIndex < baseIndex 但 PrevlogIndex + len(entries) >= baseIndex，我们将发送过来的 entries 的被压缩的一部分进行截断后再处理
+- 修改 readPersist，将 rf.snapshot置为读取到的 snapshot
+- 修改 AppendEntries 的 Xindex 逻辑
+```go
+	if args.PrevLogIndex >= rf.log.baseIndex && preEntry.Term != args.PrevLogTerm {
+		// 找到冲突term的第一个索引
+
+		for i := args.PrevLogIndex; i >= rf.log.baseIndex; i-- {
+			entry, _ := rf.log.Get(i)
+			if entry.Term != preEntry.Term {
+				reply.XIndex = i + 1
+				break
+			}
+		}
+		return
+	}
+```
+- 修改 applier 逻辑，先加锁获取到要发送的消息，如果存在 rf.snapshot,则发送 snapshot 消息，不然发送正常消息，保证每轮只发送一类消息
+```go
+func (rf *Raft) applier() {
+	for !rf.killed() {
+		rf.mu.Lock()
+		if rf.killed() {
+			rf.mu.Unlock()
+			break
+		}
+		for rf.applyIndex == rf.commitIndex {
+			rf.applyCond.Wait()
+		}
+		msgs := rf.getMsgs()
+		rf.mu.Unlock()
+		rf.sendMsgs(msgs)
+	}
+}
+```
